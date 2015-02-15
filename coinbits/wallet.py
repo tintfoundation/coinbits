@@ -1,4 +1,6 @@
-from protocoin.scripts import pay_to_pubkey_hash
+from coinbits.scripts import pay_to_pubkey_hash
+from coinbits.protocol.serializers import TxIn, TxOut, Tx, TxSerializer
+from coinbits.protocol.fields import VariableStringField
 
 
 class Wallet(object):
@@ -10,7 +12,7 @@ class Wallet(object):
 
     def make_standard_tx(self, output, destination, amount, fee=10000):
         txin = TxIn()
-        txin.previous_output = outpoint
+        txin.previous_output = output
         txin.signature_script = pay_to_pubkey_hash(self.address)
 
         txout = TxOut()
@@ -30,7 +32,7 @@ class Wallet(object):
         txin.signature_script = s.serialize()
 
         s = VariableStringField()
-        s.parse(pub.to_hex().decode('hex'))
+        s.parse(self.public_key.to_hex().decode('hex'))
         txin.signature_script += s.serialize()
 
         tx.tx_in = [txin]

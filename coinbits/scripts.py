@@ -1,4 +1,4 @@
-from protocoin.encoding import base58_check_decode
+from coinbits.encoding import base58_check_decode
 
 
 def pay_to_pubkey_hash(key):
