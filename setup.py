@@ -11,6 +11,6 @@ setup(
     license="MIT",
     url="http://github.com/8468/coinbits",
     packages=find_packages(),
-    requires=['ecdsa>=0.13'],
+    requires=['ecdsa'],
     install_requires=['ecdsa>=0.13']
 )
