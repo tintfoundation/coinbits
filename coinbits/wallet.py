@@ -1,5 +1,3 @@
-from hashlib import sha256
-
 from protocoin.scripts import pay_to_pubkey_hash
 
 
@@ -38,16 +36,3 @@ class Wallet(object):
         tx.tx_in = [txin]
 
         return TxSerializer().serialize(tx).encode('hex')
-
-
-
-
-
-key = BitcoinPrivateKey('3C07AA429758984536F9C456E35B9853717FA482243B684FA40BED386E81F2FE')
-wallet = Wallet(key)
-
-outpoint = OutPoint()
-outpoint.out_hash = int("40ba42f2df16b7c03a83bfd98874e29dd923b9908746e316f737f9108c02770d", 16)
-outpoint.index = 0
-
-tx = wallet.make_standard_tx(output, '14nDSrM8RoqCXXW95pq4BEnBHLDgSj87bD', 2000000)

@@ -1,7 +1,7 @@
-from cStringIO import StringIO
-from .serializers import *
-from .exceptions import NodeDisconnectException
 import os
+from cStringIO import StringIO
+
+from coinbits.protocol.serializers import MessageHeaderSerializer, MESSAGE_MAPPING
 
 
 class ProtocolBuffer(object):

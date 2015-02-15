@@ -1,9 +1,5 @@
-from .exceptions import NodeDisconnectException
-
 from cStringIO import StringIO
 import struct
-import time
-import random
 import socket
 
 #: The protocol version
@@ -11,11 +7,11 @@ PROTOCOL_VERSION = 60002
 
 #: The network magic values
 MAGIC_VALUES = {
-    "bitcoin":          0xD9B4BEF9,
-    "bitcoin_testnet":  0xDAB5BFFA,
+    "bitcoin": 0xD9B4BEF9,
+    "bitcoin_testnet": 0xDAB5BFFA,
     "bitcoin_testnet3": 0x0709110B,
-    "namecoin":         0xFEB4BEF9,
-    "litecoin":         0xDBB6C0FB,
+    "namecoin": 0xFEB4BEF9,
+    "litecoin": 0xDBB6C0FB,
     "litecoin_testnet": 0xDCB7C1FC
 }
 
@@ -31,10 +27,13 @@ INVENTORY_TYPE = {
     "MSG_BLOCK": 2,
 }
 
+
 class Field(object):
-    """Base class for the Fields. This class only implements
-    the counter to keep the order of the fields on the 
-    serializer classes."""
+    """
+    Base class for the Fields. This class only implements
+    the counter to keep the order of the fields on the
+    serializer classes.
+    """
     counter = 0
 
     def __init__(self):
@@ -42,7 +41,8 @@ class Field(object):
         Field.counter += 1
 
     def parse(self, value):
-        """This method should be implemented to parse the value
+        """
+        This method should be implemented to parse the value
         parameter into the field internal representation.
 
         :param value: value to be parsed
@@ -50,7 +50,8 @@ class Field(object):
         raise NotImplemented
 
     def deserialize(self, stream):
-        """This method must read the stream data and then
+        """
+        This method must read the stream data and then
         deserialize and return the deserialized content.
 
         :returns: the deserialized content
@@ -67,15 +68,16 @@ class Field(object):
         raise NotImplemented
 
     def __repr__(self):
-        return "<%s [%r]>" % (self.__class__.__name__, 
-            repr(self.value))
+        return "<%s [%r]>" % (self.__class__.__name__, repr(self.value))
 
     def __str__(self):
         return str(self.value)
 
+
 class PrimaryField(Field):
-    """This is a base class for all fields that has only
-    one value and their value can be represented by 
+    """
+    This is a base class for all fields that has only
+    one value and their value can be represented by
     a Python struct datatype.
 
     Example of use::
@@ -106,35 +108,43 @@ class PrimaryField(Field):
         """Serialize the internal data and then return the
         serialized data."""
         data = struct.pack(self.datatype, self.value)
-        return data       
+        return data
+
 
 class Int32LEField(PrimaryField):
     """32-bit little-endian integer field."""
     datatype = "<i"
 
+
 class UInt32LEField(PrimaryField):
     """32-bit little-endian unsigned integer field."""
     datatype = "<I"
+
 
 class Int64LEField(PrimaryField):
     """64-bit little-endian integer field."""
     datatype = "<q"
 
+
 class UInt64LEField(PrimaryField):
     """64-bit little-endian unsigned integer field."""
     datatype = "<Q"
+
 
 class Int16LEField(PrimaryField):
     """16-bit little-endian integer field."""
     datatype = "<h"
 
+
 class UInt16LEField(PrimaryField):
     """16-bit little-endian unsigned integer field."""
     datatype = "<H"
 
+
 class UInt16BEField(PrimaryField):
     """16-bit big-endian unsigned integer field."""
     datatype = ">H"
+
 
 class FixedStringField(Field):
     """A fixed length string field.
@@ -165,11 +175,12 @@ class FixedStringField(Field):
         bin_data.write("\x00" * (12 - len(self.value)))
         return bin_data.getvalue()
 
+
 class NestedField(Field):
     """A field used to nest another serializer.
 
     Example of use::
-       
+
        class TxInSerializer(Serializer):
            model_class = TxIn
            previous_output = fields.NestedField(OutPointSerializer)
@@ -189,6 +200,7 @@ class NestedField(Field):
 
     def serialize(self):
         return self.serializer.serialize(self.value)
+
 
 class ListField(Field):
     """A field used to serialize/deserialize a list of serializers.
@@ -234,15 +246,17 @@ class ListField(Field):
     def __len__(self):
         return len(self.value)
 
+
 class IPv4AddressField(Field):
     """An IPv4 address field without timestamp and reserved IPv6 space."""
-    reserved = "\x00"*10 + "\xff"*2
+    reserved = "\x00" * 10 + "\xff" * 2
 
     def parse(self, value):
         self.value = value
 
     def deserialize(self, stream):
-        unused_reserved = stream.read(12)
+        # unused, reserved bytes
+        stream.read(12)
         addr = stream.read(4)
         return socket.inet_ntoa(addr)
 
@@ -251,6 +265,7 @@ class IPv4AddressField(Field):
         bin_data.write(self.reserved)
         bin_data.write(socket.inet_aton(self.value))
         return bin_data.getvalue()
+
 
 class VariableIntegerField(Field):
     """A variable size integer field."""
@@ -280,6 +295,7 @@ class VariableIntegerField(Field):
             return chr(0xFE) + struct.pack("<I", self.value)
         return chr(0xFF) + struct.pack("<Q", self.value)
 
+
 class VariableStringField(Field):
     """A variable length string field."""
 
@@ -305,6 +321,7 @@ class VariableStringField(Field):
     def __len__(self):
         return len(self.value)
 
+
 class Hash(Field):
     """A hash type field."""
     datatype = "<I"
@@ -329,6 +346,7 @@ class Hash(Field):
             bin_data.write(pack_data)
             hash_ >>= 32
         return bin_data.getvalue()
+
 
 class BlockLocator(Field):
     """A block locator type used for getblocks and getheaders"""

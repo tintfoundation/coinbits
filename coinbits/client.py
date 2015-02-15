@@ -1,7 +1,5 @@
-from cStringIO import StringIO
-from .serializers import *
-from .exceptions import NodeDisconnectException
-import os
+from coinbits.protocol.exceptions import NodeDisconnectException
+from coinbits.protocol.buffer import ProtocolBuffer
 
 
 class BitcoinClient(object):
@@ -45,11 +43,11 @@ class BitcoinClient(object):
         in a receive/send loop."""
 
         while True:
-            data = self.socket.recv(1024*8)
+            data = self.socket.recv(1024 * 8)
 
             if len(data) <= 0:
                 raise NodeDisconnectException("Node disconnected.")
-            
+
             self.buffer.write(data)
             message_header, message = self.buffer.receive_message()
 

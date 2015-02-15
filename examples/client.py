@@ -1,7 +1,8 @@
-from cStringIO import StringIO
-from .serializers import *
-from .exceptions import NodeDisconnectException
 import os
+import socket
+from cStringIO import StringIO
+
+from coinbits.client import BitcoinClient
 
 
 class MyClient(BitcoinClient):
@@ -37,3 +38,12 @@ class MyClient(BitcoinClient):
         pong = Pong()
         pong.nonce = message.nonce
         self.send_message(pong)
+
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#sock.connect(("bitcoin.sipa.be", 8333))
+sock.connect(("144.76.202.239", 8333))
+
+client = MyClient(sock)
+client.handshake()
+client.loop()

@@ -1,11 +1,12 @@
-import binascii
 import hashlib
 
 import ecdsa
-from encoding import base58_encode, base58_dencode
+from encoding import base58_encode, base58_decode
+
 
 class BitcoinPublicKey(object):
-    """This is a representation for Bitcoin public keys. In this
+    """
+    This is a representation for Bitcoin public keys. In this
     class you'll find methods to import/export keys from multiple
     formats. Use a hex string representation to construct a new
     public key or use the clas methods to import from another format.
@@ -17,8 +18,8 @@ class BitcoinPublicKey(object):
     def __init__(self, hexkey):
         stringkey = hexkey.decode("hex")[1:]
         self.public_key = ecdsa.VerifyingKey.from_string(stringkey,
-            curve=ecdsa.SECP256k1)
-    
+                                                         curve=ecdsa.SECP256k1)
+
     @classmethod
     def from_private_key(klass, private_key):
         """This class method will create a new Public Key
@@ -59,15 +60,15 @@ class BitcoinPublicKey(object):
         ripemd160 = hashlib.new('ripemd160')
         ripemd160.update(sha256digest)
         ripemd160_digest = ripemd160.digest()
-        
+
         # Prepend the version info
         ripemd160_digest = '\x00' + ripemd160_digest
-        
+
         # Calc checksum
         checksum = hashlib.sha256(ripemd160_digest).digest()
         checksum = hashlib.sha256(checksum).digest()
         checksum = checksum[:4]
-        
+
         # Append checksum
         address = ripemd160_digest + checksum
         address_bignum = int('0x' + address.encode('hex'), 16)
@@ -76,6 +77,7 @@ class BitcoinPublicKey(object):
 
     def __repr__(self):
         return "<BitcoinPublicKey address=[%s]>" % self.to_address()
+
 
 class BitcoinPrivateKey(object):
     """This is a representation for Bitcoin private keys. In this
@@ -104,7 +106,7 @@ class BitcoinPrivateKey(object):
         else:
             self.private_key = \
                 ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1,
-                    entropy=entropy)
+                                          entropy=entropy)
 
     @classmethod
     def from_string(klass, stringkey):
@@ -113,7 +115,7 @@ class BitcoinPrivateKey(object):
 
         :param stringkey: The key in string format
         :returns: A new Private Key
-        """     
+        """
         hexvalue = stringkey.encode("hex")
         return klass(hexvalue)
 
@@ -127,13 +129,13 @@ class BitcoinPrivateKey(object):
         """
         value = base58_decode(wifkey)
         hexkey = "%x" % value
-        checksum = hexkey[-4*2:].decode("hex")
-        key = hexkey[:-4*2].decode("hex")
+        checksum = hexkey[(-4 * 2):].decode("hex")
+        key = hexkey[:(-4 * 2)].decode("hex")
 
         shafirst = hashlib.sha256(key).digest()
         shasecond = hashlib.sha256(shafirst).digest()
 
-        if shasecond[:4]!=checksum:
+        if shasecond[:4] != checksum:
             raise RuntimeError("Invalid checksum for the address.")
 
         return klass(key[1:].encode("hex"))
@@ -178,16 +180,12 @@ class BitcoinPrivateKey(object):
         return sig + '\01'
 
     def generate_public_key(self):
-        """This method will create a new Public Key based on this
-        Private Key. 
+        """
+        This method will create a new Public Key based on this Private Key.
 
         :returns: A new Public Key
         """
-        hexkey = self.to_hex().upper()
         return BitcoinPublicKey.from_private_key(self.private_key)
 
     def __repr__(self):
         return "<BitcoinPrivateKey hexkey=[%s]>" % self.to_hex()
-
-
-
