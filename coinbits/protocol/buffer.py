@@ -1,7 +1,7 @@
 import os
 from cStringIO import StringIO
 
-from coinbits.protocol.serializers import MessageHeaderSerializer, MESSAGE_MAPPING
+from coinbits.protocol.serializers import MessageHeaderSerializer, getSerializer
 
 
 class ProtocolBuffer(object):
@@ -48,8 +48,7 @@ class ProtocolBuffer(object):
         if payload_checksum != message_header.checksum:
             raise RuntimeError("Bad message checksum")
 
-        if message_header.command in MESSAGE_MAPPING:
-            deserializer = MESSAGE_MAPPING[message_header.command]()
-            message_model = deserializer.deserialize(StringIO(payload))
+        deserializer = getSerializer(message_header.command)
+        message_model = deserializer.deserialize(StringIO(payload))
 
         return (message_header, message_model)

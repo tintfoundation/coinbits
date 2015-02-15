@@ -8,6 +8,7 @@ Subpackages
 
     coinbits.protocol
     coinbits.tests
+    coinbits.txns
 
 Submodules
 ----------
@@ -24,30 +25,6 @@ coinbits.encoding module
 ------------------------
 
 .. automodule:: coinbits.encoding
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-coinbits.keys module
---------------------
-
-.. automodule:: coinbits.keys
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-coinbits.scripts module
------------------------
-
-.. automodule:: coinbits.scripts
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-coinbits.wallet module
-----------------------
-
-.. automodule:: coinbits.wallet
     :members:
     :undoc-members:
     :show-inheritance:

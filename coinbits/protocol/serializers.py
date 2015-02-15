@@ -6,6 +6,7 @@ from cStringIO import StringIO
 from collections import OrderedDict
 
 from coinbits.protocol import fields
+from coinbits.protocol.exceptions import UnknownMessageException
 
 
 class SerializerMeta(type):
@@ -83,7 +84,7 @@ class SerializableMessage(object):
         message_header = MessageHeader(coin)
         message_header_serial = MessageHeaderSerializer()
 
-        serializer = MESSAGE_MAPPING[self.command]()
+        serializer = getSerializer(self.command)
         bin_message = serializer.serialize(self)
         payload_checksum = \
             MessageHeaderSerializer.calc_checksum(bin_message)
@@ -610,19 +611,26 @@ class GetBlocksSerializer(Serializer):
     hash_stop = fields.Hash()
 
 
-MESSAGE_MAPPING = {
-    "version": VersionSerializer,
-    "verack": VerAckSerializer,
-    "ping": PingSerializer,
-    "pong": PongSerializer,
-    "inv": InventoryVectorSerializer,
-    "addr": AddressVectorSerializer,
-    "getdata": GetDataSerializer,
-    "notfound": NotFoundSerializer,
-    "tx": TxSerializer,
-    "block": BlockSerializer,
-    "headers": HeaderVectorSerializer,
-    "mempool": MemPoolSerializer,
-    "getaddr": GetAddrSerializer,
-    "getblocks": GetBlocksSerializer,
-}
+def getSerializer(msgtype):
+    """
+    Return a new serializer of the given msg type.
+    """
+    mapping = {
+        "version": VersionSerializer,
+        "verack": VerAckSerializer,
+        "ping": PingSerializer,
+        "pong": PongSerializer,
+        "inv": InventoryVectorSerializer,
+        "addr": AddressVectorSerializer,
+        "getdata": GetDataSerializer,
+        "notfound": NotFoundSerializer,
+        "tx": TxSerializer,
+        "block": BlockSerializer,
+        "headers": HeaderVectorSerializer,
+        "mempool": MemPoolSerializer,
+        "getaddr": GetAddrSerializer,
+        "getblocks": GetBlocksSerializer,
+    }
+    if msgtype not in mapping:
+        raise UnknownMessageException("%s is not recognized" % msgtype)
+    return mapping[msgtype]()

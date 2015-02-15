@@ -1,49 +1,22 @@
-import os
-import socket
-from cStringIO import StringIO
-
 from coinbits.client import BitcoinClient
+from coinbits.protocol.serializers import VerAck, GetBlocks
 
 
 class MyClient(BitcoinClient):
-    """This class implements all the protocol rules needed
-    for a client to stay up in the network. It will handle
-    the handshake rules as well answer the ping messages."""
+    def handle_message_header(self, message_header, payload):
+        print "Got a message:", message_header.command
 
-    def handshake(self):
-        """This method will implement the handshake of the
-        Bitcoin protocol. It will send the Version message."""
-        version = Version()
-        self.send_message(version)
+    def send_message(self, message):
+        print "Sending a message:", message
+        super(MyClient, self).send_message(message)
 
     def handle_version(self, message_header, message):
-        """This method will handle the Version message and
-        will send a VerAck message when it receives the
-        Version message.
+        self.send_message(VerAck())
+        hash = int('00000000000000000f69e991ee47a3536770f5d452967ec7edeb8d8cb28f9f28', 16)
+        gh = GetBlocks([hash])
+        self.send_message(gh)
 
-        :param message_header: The Version message header
-        :param message: The Version message
-        """
-        verack = VerAck()
-        self.send_message(verack)
+    def handle_inv(self, message_header, message):
+        print "Got some inventory:", message
 
-    def handle_ping(self, message_header, message):
-        """This method will handle the Ping message and then
-        will answer every Ping message with a Pong message
-        using the nonce received.
-
-        :param message_header: The header of the Ping message
-        :param message: The Ping message
-        """
-        pong = Pong()
-        pong.nonce = message.nonce
-        self.send_message(pong)
-
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#sock.connect(("bitcoin.sipa.be", 8333))
-sock.connect(("144.76.202.239", 8333))
-
-client = MyClient(sock)
-client.handshake()
-client.loop()
+MyClient("bitcoin.sipa.be").loop()
