@@ -611,26 +611,57 @@ class GetBlocksSerializer(Serializer):
     hash_stop = fields.Hash()
 
 
+class GetHeaders(GetBlocks):
+    command = "getheaders"
+
+
+class GetHeadersSerializer(GetBlocksSerializer):
+    model_class = GetHeaders
+
+
+class Reject(SerializableMessage):
+    command = "reject"
+
+    def __init__(self):
+        self.message = None
+        # general "invalid" error code is default
+        self.ccode = 0x10
+        self.reason = "Unknown"
+        self.data = None
+
+
+class RejectSerializer(Serializer):
+    model_class = Reject
+    message = fields.VariableStringField()
+    ccode = fields.FixedStringField(1)
+    reason = fields.VariableStringField()
+    data = fields.Hash()
+
+
+CMD_MAPPING = {
+    "version": VersionSerializer,
+    "verack": VerAckSerializer,
+    "ping": PingSerializer,
+    "pong": PongSerializer,
+    "inv": InventoryVectorSerializer,
+    "addr": AddressVectorSerializer,
+    "getdata": GetDataSerializer,
+    "notfound": NotFoundSerializer,
+    "tx": TxSerializer,
+    "block": BlockSerializer,
+    "headers": HeaderVectorSerializer,
+    "mempool": MemPoolSerializer,
+    "getaddr": GetAddrSerializer,
+    "getblocks": GetBlocksSerializer,
+    "getheaders": GetHeadersSerializer,
+    "reject": RejectSerializer
+}
+
+
 def getSerializer(msgtype):
     """
     Return a new serializer of the given msg type.
     """
-    mapping = {
-        "version": VersionSerializer,
-        "verack": VerAckSerializer,
-        "ping": PingSerializer,
-        "pong": PongSerializer,
-        "inv": InventoryVectorSerializer,
-        "addr": AddressVectorSerializer,
-        "getdata": GetDataSerializer,
-        "notfound": NotFoundSerializer,
-        "tx": TxSerializer,
-        "block": BlockSerializer,
-        "headers": HeaderVectorSerializer,
-        "mempool": MemPoolSerializer,
-        "getaddr": GetAddrSerializer,
-        "getblocks": GetBlocksSerializer,
-    }
-    if msgtype not in mapping:
+    if msgtype not in CMD_MAPPING:
         raise UnknownMessageException("%s is not recognized" % msgtype)
-    return mapping[msgtype]()
+    return CMD_MAPPING[msgtype]()
