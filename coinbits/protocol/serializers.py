@@ -1,11 +1,11 @@
 import time
-import random
 import hashlib
 import struct
 from cStringIO import StringIO
 from collections import OrderedDict
 
-from coinbits.protocol import fields
+from coinbits import version as coinbits_version
+from coinbits.protocol import fields, utils
 from coinbits.protocol.exceptions import UnknownMessageException
 
 
@@ -207,8 +207,8 @@ class Version(SerializableMessage):
         self.timestamp = time.time()
         self.addr_recv = IPv4Address()
         self.addr_from = IPv4Address()
-        self.nonce = random.randint(0, 2 ** 32 - 1)
-        self.user_agent = "/Perone:0.0.1/"
+        self.nonce = utils.nonce()
+        self.user_agent = "/coinbits:%s/" % coinbits_version
         self.start_height = 0
 
 
@@ -241,7 +241,7 @@ class Ping(SerializableMessage):
     command = "ping"
 
     def __init__(self):
-        self.nonce = random.randint(0, 2 ** 32 - 1)
+        self.nonce = utils.nonce()
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
@@ -259,7 +259,7 @@ class Pong(SerializableMessage):
     command = "pong"
 
     def __init__(self):
-        self.nonce = random.randint(0, 2 ** 32 - 1)
+        self.nonce = utils.nonce()
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)

@@ -3,8 +3,9 @@ from coinbits.protocol.serializers import VerAck, GetBlocks
 
 
 class MyClient(BitcoinClient):
-    def handle_message_header(self, message_header, payload):
+    def message_received(self, message_header, message):
         print "Got a message:", message_header.command
+        super(MyClient, self).message_received(message_header, message)
 
     def send_message(self, message):
         print "Sending a message:", message

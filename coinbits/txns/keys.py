@@ -1,62 +1,74 @@
 import hashlib
-
 import ecdsa
-from encoding import base58_encode, base58_decode
+
+from coinbits.encoding import b58encode, b58decode
+from coinbits.txns.exceptions import KeyDecodeError
 
 
-class BitcoinPublicKey(object):
+class PublicKey(object):
     """
     This is a representation for Bitcoin public keys. In this
     class you'll find methods to import/export keys from multiple
     formats. Use a hex string representation to construct a new
     public key or use the clas methods to import from another format.
-
-    :param hexkey: The key in hex string format
     """
     key_prefix = '\x04'
 
     def __init__(self, hexkey):
+        """
+        Initialize a public key object.  Requires an existing version
+        of this key in hex.
+
+        Args:
+            hexkey: The key in hex string format
+        """
         stringkey = hexkey.decode("hex")[1:]
         self.public_key = ecdsa.VerifyingKey.from_string(stringkey,
                                                          curve=ecdsa.SECP256k1)
 
     @classmethod
     def from_private_key(klass, private_key):
-        """This class method will create a new Public Key
-        based on a private key.
-
-        :param private_key: The private key
-        :returns: a new public key
         """
-        public_key = private_key.get_verifying_key()
+        This class method will create a new PublicKey based on a
+        PrivateKey.
+
+        Args:
+            private_key: The PrivateKey
+
+        Returns:
+            A new PublicKey
+        """
+        public_key = private_key.private_key.get_verifying_key()
         hexkey = (klass.key_prefix + public_key.to_string()).encode("hex")
         return klass(hexkey)
 
-    def to_string(self):
-        """This method will convert the public key to
-        a string representation.
-
-        :returns: String representation of the public key
+    def verify(self, signature, message):
         """
-        return self.key_prefix + self.public_key.to_string()
+        Verify the given signature of the message.  Returns True if
+        verification is successful, False otherwise.
+        """
+        digest = hashlib.sha256(hashlib.sha256(message).digest()).digest()
+        return self.public_key.verify_digest(signature[:-1], digest, sigdecode=ecdsa.util.sigdecode_der)
 
     def to_hex(self):
-        """This method will convert the public key to
+        """
+        This method will convert the public key to
         a hex string representation.
 
-        :returns: Hex string representation of the public key
+        Returns:
+            A hex string representation of the public key
         """
         hexkey = self.public_key.to_string().encode("hex")
         return self.key_prefix.encode("hex") + hexkey.upper()
 
     def to_address(self):
-        """This method will convert the public key to
-        a bitcoin address.
-
-        :returns: bitcoin address for the public key
         """
-        pubkeystr = self.to_string()
-        sha256digest = hashlib.sha256(pubkeystr).digest()
+        This method will convert the public key to a bitcoin address.
+
+        Returns:
+            A bitcoin address for the public key
+        """
+        sha256digest = hashlib.sha256(str(self)).digest()
         ripemd160 = hashlib.new('ripemd160')
         ripemd160.update(sha256digest)
         ripemd160_digest = ripemd160.digest()
@@ -72,63 +84,78 @@ class BitcoinPublicKey(object):
         # Append checksum
         address = ripemd160_digest + checksum
         address_bignum = int('0x' + address.encode('hex'), 16)
-        base58 = base58_encode(address_bignum)
-        return '1' + base58
+        return '1' + b58encode(address_bignum)
 
     def __repr__(self):
-        return "<BitcoinPublicKey address=[%s]>" % self.to_address()
+        return "<PublicKey address=[%s]>" % self.to_address()
+
+    def __eq__(self, other):
+        return self.to_hex() == other.to_hex()
+
+    def __str__(self):
+        """
+        This method will convert the public key to
+        a string representation.
+
+        Returns:
+            A string representation of the public key
+        """
+        return self.key_prefix + self.public_key.to_string()
 
 
-class BitcoinPrivateKey(object):
-    """This is a representation for Bitcoin private keys. In this
+class PrivateKey(object):
+    """
+    This is a representation for Bitcoin private keys. In this
     class you'll find methods to import/export keys from multiple
-    formats. Use a hex string
-    representation to construct a new Public Key or
-    use the clas methods to import from another format.
-    If no parameter is specified on the construction of
-    this class, a new Private Key will be created.
-
-    :param hexkey: The key in hex string format
-    :param entropy: A function that accepts a parameter
-                    with the number of bytes and returns
-                    the same amount of bytes of random
-                    data, use a good source of entropy.
-                    When this parameter is ommited, the
-                    OS entropy source is used.
+    formats. Use a hex string representation to construct a new PublicKey
+    or use the clas methods to import from another format.
     """
     wif_prefix = '\x80'
 
-    def __init__(self, hexkey=None, entropy=None):
+    def __init__(self, hexkey=None):
+        """
+        Construct a new PrivateKey object, based optionally on an existing
+        hex representation.
+
+        Args:
+            hexkey: The key in hex string format.  If one isn't
+            provided, a new private key will be generated.
+        """
         if hexkey:
             stringkey = hexkey.decode("hex")
             self.private_key = \
                 ecdsa.SigningKey.from_string(stringkey, curve=ecdsa.SECP256k1)
         else:
             self.private_key = \
-                ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1,
-                                          entropy=entropy)
+                ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)
 
     @classmethod
     def from_string(klass, stringkey):
-        """This method will create a new Private Key using
+        """
+        This method will create a new Private Key using
         the specified string data.
 
-        :param stringkey: The key in string format
-        :returns: A new Private Key
+        Args:
+            stringkey: The key in string format
+
+        Returns:
+            A new PrivateKey
         """
-        hexvalue = stringkey.encode("hex")
-        return klass(hexvalue)
+        return klass(stringkey.encode("hex"))
 
     @classmethod
     def from_wif(klass, wifkey):
-        """This method will create a new Private Key from a
+        """
+        This method will create a new PrivateKey from a
         WIF format string.
 
-        :param wifkey: The private key in WIF format
-        :returns: A new Private Key
+        Args:
+            wifkey: The private key in WIF format
+
+        Returns:
+            A new PrivateKey
         """
-        value = base58_decode(wifkey)
-        hexkey = "%x" % value
+        hexkey = "%x" % b58decode(wifkey)
         checksum = hexkey[(-4 * 2):].decode("hex")
         key = hexkey[:(-4 * 2)].decode("hex")
 
@@ -136,41 +163,42 @@ class BitcoinPrivateKey(object):
         shasecond = hashlib.sha256(shafirst).digest()
 
         if shasecond[:4] != checksum:
-            raise RuntimeError("Invalid checksum for the address.")
+            raise KeyDecodeError("Invalid checksum for the address.")
 
         return klass(key[1:].encode("hex"))
 
     def to_hex(self):
-        """This method will convert the Private Key to
+        """
+        This method will convert the Private Key to
         a hex string representation.
 
-        :returns: Hex string representation of the Private Key
+        Returns:
+            Hex string representation of this PrivateKey
         """
         hexkey = self.private_key.to_string().encode("hex")
         return hexkey.upper()
 
-    def to_string(self):
-        """This method will convert the Private Key to
-        a string representation.
-
-        :returns: String representation of the Private Key
-        """
-        return self.private_key.to_string()
-
     def to_wif(self):
-        """This method will export the Private Key to
+        """
+        This method will export the Private Key to
         WIF (Wallet Import Format).
 
-        :returns:: The Private Key in WIF format.
+        Returns:
+            The PrivateKey in WIF format.
         """
-        extendedkey = self.wif_prefix + self.to_string()
+        extendedkey = self.wif_prefix + str(self)
         shafirst = hashlib.sha256(extendedkey).digest()
         shasecond = hashlib.sha256(shafirst).digest()
         checksum = shasecond[:4]
         extendedkey = extendedkey + checksum
         key_bignum = int('0x' + extendedkey.encode('hex'), 16)
-        base58 = base58_encode(key_bignum)
-        return base58
+        return b58encode(key_bignum)
+
+    def to_address(self):
+        """
+        Convert to public key and then get the public address for that key.
+        """
+        return self.get_public_key().to_address()
 
     def sign(self, data):
         """Digest and then sign the data."""
@@ -179,13 +207,24 @@ class BitcoinPrivateKey(object):
         # 01 is hashtype
         return sig + '\01'
 
-    def generate_public_key(self):
+    def get_public_key(self):
         """
-        This method will create a new Public Key based on this Private Key.
+        This method will create a new PublicKey based on this PrivateKey.
 
-        :returns: A new Public Key
+        Returns:
+            A new PublicKey
         """
-        return BitcoinPublicKey.from_private_key(self.private_key)
+        return PublicKey.from_private_key(self)
+
+    def __eq__(self, other):
+        return self.to_hex() == other.to_hex()
+
+    def __str__(self):
+        """
+        This method will convert the PrivateKey to
+        a string representation.
+        """
+        return self.private_key.to_string()
 
     def __repr__(self):
-        return "<BitcoinPrivateKey hexkey=[%s]>" % self.to_hex()
+        return "<PrivateKey hexkey=[%s]>" % self.to_hex()

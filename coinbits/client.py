@@ -36,7 +36,8 @@ class BitcoinClient(object):
         self.send_message(VerAck())
 
     def handle_ping(self, message_header, message):
-        """This method will handle the Ping message and then
+        """
+        This method will handle the Ping message and then
         will answer every Ping message with a Pong message
         using the nonce received.
 
@@ -48,16 +49,20 @@ class BitcoinClient(object):
         pong.nonce = message.nonce
         self.send_message(pong)
 
-    def handle_message_header(self, message_header, payload):
+    def message_received(self, message_header, message):
         """
-        This method will be called for every message before the
-        message payload deserialization.
+        This method will be called for every message, and then will
+        delegate to the appropriate handle_* function for the given
+        message (if it exists).
 
         Args:
             message_header: The message header
-            payload: The payload of the message
+            message: The message object
         """
-        pass
+        handle_func_name = "handle_" + message_header.command
+        handle_func = getattr(self, handle_func_name, None)
+        if handle_func:
+            handle_func(message_header, message)
 
     def send_message(self, message):
         """
@@ -83,14 +88,5 @@ class BitcoinClient(object):
 
             self.buffer.write(data)
             message_header, message = self.buffer.receive_message()
-
-            if message_header is not None:
-                self.handle_message_header(message_header, data)
-
-            if not message:
-                continue
-
-            handle_func_name = "handle_" + message_header.command
-            handle_func = getattr(self, handle_func_name, None)
-            if handle_func:
-                handle_func(message_header, message)
+            if message is not None:
+                self.message_received(message_header, message)
