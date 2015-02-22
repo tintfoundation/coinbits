@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
     coinbits.protocol
-    coinbits.tests
     coinbits.txns
 
 Submodules

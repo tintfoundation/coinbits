@@ -4,6 +4,14 @@ coinbits.txns package
 Submodules
 ----------
 
+coinbits.txns.exceptions module
+-------------------------------
+
+.. automodule:: coinbits.txns.exceptions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 coinbits.txns.keys module
 -------------------------
 

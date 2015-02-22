@@ -34,6 +34,14 @@ class BitcoinClient(object):
             message: The Version message
         """
         self.send_message(VerAck())
+        self.connected()
+
+    def connected(self):
+        """
+        Called once we've exchanged version information and can make
+        calls on the network.
+        """
+        pass
 
     def handle_ping(self, message_header, message):
         """

@@ -95,6 +95,11 @@ class SerializableMessage(object):
         bin_header = message_header_serial.serialize(message_header)
         return bin_header + bin_message
 
+    def __repr__(self):
+        names = getSerializer(self.command)._fields.keys()
+        attrs = [ "%s=%s" % (name, getattr(self, name)) for name in names ]
+        return "<%s %s>" % (self.__class__.__name__, ", ".join(attrs))
+
 
 class MessageHeader(object):
     """The header of all bitcoin messages."""

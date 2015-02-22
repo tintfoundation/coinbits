@@ -36,6 +36,14 @@ coinbits.protocol.serializers module
     :undoc-members:
     :show-inheritance:
 
+coinbits.protocol.utils module
+------------------------------
+
+.. automodule:: coinbits.protocol.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

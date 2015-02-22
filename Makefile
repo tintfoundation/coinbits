@@ -8,5 +8,6 @@ lint:
 install:
 	python setup.py install
 
-docs:
-	sphinx-apidoc -o docs/source coinbits
+apidocs:
+	rm -rf docs/source
+	sphinx-apidoc -o docs/source coinbits coinbits/**/tests coinbits/tests
