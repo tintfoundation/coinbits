@@ -95,10 +95,25 @@ class SerializableMessage(object):
         bin_header = message_header_serial.serialize(message_header)
         return bin_header + bin_message
 
+    def get_field_names(self):
+        return getSerializer(self.command)._fields.keys()
+
     def __repr__(self):
-        names = getSerializer(self.command)._fields.keys()
-        attrs = [ "%s=%s" % (name, getattr(self, name)) for name in names ]
+        attrs = [ "%s=%s" % (name, getattr(self, name)) for name in self.get_field_names() ]
         return "<%s %s>" % (self.__class__.__name__, ", ".join(attrs))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+
+        for name in self.get_field_names():
+            if getattr(self, name) != getattr(other, name):
+                return False
+
+        return True
 
 
 class MessageHeader(object):
@@ -293,6 +308,9 @@ class Inventory(SerializableMessage):
         return "<%s Type=[%s] Hash=[%064x]>" % \
             (self.__class__.__name__, self.type_to_text(),
                 self.inv_hash)
+
+    def __eq__(self, other):
+        return self.inv_type == other.inv_type and self.inv_hash == other.inv_hash
 
 
 class InventorySerializer(Serializer):
